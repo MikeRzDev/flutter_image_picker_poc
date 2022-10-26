@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,11 +49,30 @@ class _MyHomePageState extends State<MyHomePage> {
   String? _retrieveDataError;
 
   final ImagePicker _picker = ImagePicker();
-  final TextEditingController maxWidthController = TextEditingController();
-  final TextEditingController maxHeightController = TextEditingController();
-  final TextEditingController qualityController = TextEditingController();
 
-  Future<void> _pickImageFromGallery(BuildContext? context) async {
+  Future<void> _pickImageFromGallery(BuildContext context) async {
+    if (Platform.isIOS) {
+      var status = await Permission.photos.status;
+      if (status.isDenied) {
+        await showDialog(
+         context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Permission denied'),
+              content: const Text('Please allow access to the photo library'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          }
+        );
+        return;
+      }
+    }
+    
     try {
       final List<XFile> pickedFileList = await _picker.pickMultiImage(
       );
@@ -66,7 +86,29 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _pickImageFromCamera({BuildContext? context}) async {
+  Future<void> _pickImageFromCamera(BuildContext context) async {
+    if (Platform.isIOS) {
+      var status = await Permission.camera.status;
+      if (status.isDenied) {
+        await showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Permission denied'),
+                content: const Text('Please allow access to the camera'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            }
+        );
+        return;
+      }
+    }
+    
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.camera,
@@ -79,14 +121,6 @@ class _MyHomePageState extends State<MyHomePage> {
         _pickImageError = e;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    maxWidthController.dispose();
-    maxHeightController.dispose();
-    qualityController.dispose();
-    super.dispose();
   }
 
   Widget _previewImages() {
@@ -197,7 +231,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: FloatingActionButton(
-              onPressed: () => _pickImageFromCamera(context: context),
+              onPressed: () => _pickImageFromCamera(context),
               heroTag: 'image2',
               tooltip: 'Take a Photo',
               child: const Icon(Icons.camera_alt),
@@ -217,51 +251,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return null;
   }
 
-  Future<void> _displayPickImageDialog(BuildContext context, OnPickImageCallback onPick) async {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Add optional parameters'),
-            content: Column(
-              children: <Widget>[
-                TextField(
-                  controller: maxWidthController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(hintText: 'Enter maxWidth if desired'),
-                ),
-                TextField(
-                  controller: maxHeightController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(hintText: 'Enter maxHeight if desired'),
-                ),
-                TextField(
-                  controller: qualityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(hintText: 'Enter quality if desired'),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('CANCEL'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                  child: const Text('PICK'),
-                  onPressed: () {
-                    final double? width = maxWidthController.text.isNotEmpty ? double.parse(maxWidthController.text) : null;
-                    final double? height = maxHeightController.text.isNotEmpty ? double.parse(maxHeightController.text) : null;
-                    final int? quality = qualityController.text.isNotEmpty ? int.parse(qualityController.text) : null;
-                    onPick(width, height, quality);
-                    Navigator.of(context).pop();
-                  }),
-            ],
-          );
-        });
-  }
 }
 
 typedef OnPickImageCallback = void Function(double? maxWidth, double? maxHeight, int? quality);
