@@ -54,28 +54,35 @@ class _MyHomePageState extends State<MyHomePage> {
     if (Platform.isIOS) {
       var status = await Permission.photos.status;
       if (status.isDenied) {
-        await showDialog(
-         context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Permission denied'),
-              content: const Text('Please allow access to the photo library'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            );
+        final result = await Permission.photos.request();
+        if (result.isDenied) {
+          {
+            return;
           }
-        );
-        return;
+        }
+      } else if (status.isPermanentlyDenied) {
+        await showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Permission denied'),
+                content: const Text('Please enable access to the photo library in settings'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      openAppSettings();
+                    },
+                    child: const Text('Open Settings'),
+                  ),
+                ],
+              );
+            });
       }
     }
-    
+
     try {
-      final List<XFile> pickedFileList = await _picker.pickMultiImage(
-      );
+      final List<XFile> pickedFileList = await _picker.pickMultiImage();
       setState(() {
         _imageFileList = pickedFileList;
       });
@@ -89,26 +96,33 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _pickImageFromCamera(BuildContext context) async {
     if (Platform.isIOS) {
       var status = await Permission.camera.status;
+      print(status);
       if (status.isDenied) {
+        final result = await Permission.camera.request();
+        if (result.isDenied) {
+          return;
+        }
+      } else if (status.isPermanentlyDenied) {
         await showDialog(
             context: context,
             builder: (context) {
               return AlertDialog(
                 title: const Text('Permission denied'),
-                content: const Text('Please allow access to the camera'),
+                content: const Text('Please enable access to the camera in settings'),
                 actions: <Widget>[
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      openAppSettings();
+                    },
                     child: const Text('OK'),
                   ),
                 ],
               );
-            }
-        );
-        return;
+            });
       }
     }
-    
+
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.camera,
@@ -250,7 +264,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return null;
   }
-
 }
 
 typedef OnPickImageCallback = void Function(double? maxWidth, double? maxHeight, int? quality);
