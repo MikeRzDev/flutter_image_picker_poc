@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -73,7 +72,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-
   Future<void> createPhotoDirectoryIfNotExists() async {
     final appBaseFolder = Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
     final appBaseFolderPath = appBaseFolder?.path;
@@ -83,7 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
       await photosDirectory.create();
     }
   }
-
 
   Future<void> deletePhotoDirectory() async {
     final appBaseFolder = Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
@@ -180,34 +177,6 @@ class _MyHomePageState extends State<MyHomePage> {
             });
       }
     }
-    /*else if (Platform.isAndroid) {
-      var status = await Permission.storage.status;
-      print(status);
-      if (status.isDenied) {
-        final result = await Permission.storage.request();
-        if (result.isDenied) {
-          return;
-        }
-      } else if (status.isPermanentlyDenied) {
-        await showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Permission denied'),
-                content: const Text('Please enable storage to save picture in external storage'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      openAppSettings();
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              );
-            });
-      }
-    }*/
 
     try {
       final pickedFile = await _picker.pickImage(
